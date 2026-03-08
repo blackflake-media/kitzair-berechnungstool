@@ -530,9 +530,9 @@ function App() {
                   </div>
                 </div>
               </div>
-              {/* Karte: Handy/Tablet höher; Wettervorhersage-Box (LEDs) nur ab Tablet, auf Handy ausgeblendet */}
-              <div className="flex-1 min-w-0 flex flex-col gap-0 min-h-[380px] sm:min-h-[420px] md:min-h-[400px] lg:min-h-[260px]">
-                <div className="flex-1 min-w-0 rounded-lg overflow-hidden relative flex flex-col self-stretch min-h-[340px] sm:min-h-[380px] md:min-h-[360px] lg:min-h-[220px]">
+              {/* Karte: Höhe begrenzen (max-h), damit Wetter-Bar wirklich am Karten-Unterrand klebt (nicht unter der Spalte). */}
+              <div className="flex-1 min-w-0 flex flex-col min-h-[280px] max-h-[112vh] md:max-h-[75vh] lg:min-h-[260px] lg:max-h-none">
+                <div className="flex-1 min-w-0 min-h-0 rounded-lg overflow-hidden relative flex flex-col">
                   <RouteMap
                     locations={locations}
                     legs={legs}
@@ -551,7 +551,7 @@ function App() {
                     t={t}
                     className="flex-1"
                   />
-                  {/* Wettervorhersage-Box (mit LEDs): nur ab Tablet sichtbar, auf Handy ausgeblendet (verdeckt sonst die ganze Karte) */}
+                  {/* Wettervorhersage-Box (mit LEDs): nur ab Tablet */}
                   {legs && legs.length > 0 && (
                     <div className="hidden md:block absolute top-2 right-2 z-[1000]">
                       <MapWeatherOverlay
@@ -570,28 +570,20 @@ function App() {
                       />
                     </div>
                   )}
-                  {/* Wetter-Vorschau nur auf Desktop in der Karte (rechts unten) */}
+                  {/* Wetter-Meldung: ein Feld am unteren Rand der Karte (volle Breite), Inhalt rechtsbündig – wie vorher */}
                   <div
-                    className="hidden lg:block absolute bottom-0 right-0 z-[1000] w-max max-w-full text-right rounded-tl-lg text-[11px] leading-tight overflow-hidden shadow-lg"
+                    className="absolute bottom-0 left-0 right-0 z-[1000] flex flex-wrap items-center justify-end gap-x-3 gap-y-1 px-2 py-1.5 bg-slate-900/90 text-slate-100 text-[11px] leading-tight rounded-b-lg"
                     aria-label={t("weather")}
                   >
                     {weatherStatus != null && (
-                      <div
-                        className={`flex items-center justify-end gap-1.5 px-2 py-1 ${
-                          weatherStatus === "green"
-                            ? "bg-emerald-600/90 text-white"
-                            : weatherStatus === "yellow"
-                              ? "bg-amber-500/90 text-white"
-                              : "bg-red-600/90 text-white"
-                        }`}
-                      >
+                      <span className="flex items-center gap-1.5">
                         <span
                           className={`h-2.5 w-2.5 shrink-0 rounded-full ${
                             weatherStatus === "green"
-                              ? "bg-white shadow-[0_0_4px_1px_rgba(255,255,255,0.8)]"
+                              ? "bg-emerald-400"
                               : weatherStatus === "yellow"
-                                ? "bg-white shadow-[0_0_4px_1px_rgba(255,255,255,0.8)]"
-                                : "bg-white shadow-[0_0_4px_1px_rgba(255,255,255,0.8)]"
+                                ? "bg-amber-400"
+                                : "bg-red-400"
                           }`}
                           aria-hidden
                         />
@@ -602,9 +594,9 @@ function App() {
                               ? t("weatherStatusObserve")
                               : t("weatherStatusPoor")}
                         </span>
-                      </div>
+                      </span>
                     )}
-                    <div className="px-2 py-1.5 bg-slate-900/85 text-slate-100">
+                    <span className="tabular-nums">
                       {weatherLoading
                         ? t("weatherLoading")
                         : weather
@@ -612,44 +604,8 @@ function App() {
                           : hasValidInput && flightDate
                             ? t("weatherNoData")
                             : "—"}
-                    </div>
-                  </div>
-                </div>
-                {/* Mobil: Wetter-Streifen unter der Karte (verdeckt die Karte nicht) */}
-                <div
-                  className="lg:hidden flex flex-wrap items-center justify-end gap-x-3 gap-y-1 px-2 py-1.5 rounded-b-lg bg-slate-900/90 text-slate-100 text-[11px] leading-tight"
-                  aria-label={t("weather")}
-                >
-                  {weatherStatus != null && (
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        className={`h-2 w-2 shrink-0 rounded-full ${
-                          weatherStatus === "green"
-                            ? "bg-emerald-400"
-                            : weatherStatus === "yellow"
-                              ? "bg-amber-400"
-                              : "bg-red-400"
-                        }`}
-                        aria-hidden
-                      />
-                      <span>
-                        {weatherStatus === "green"
-                          ? t("weatherStatusGood")
-                          : weatherStatus === "yellow"
-                            ? t("weatherStatusObserve")
-                            : t("weatherStatusPoor")}
-                      </span>
                     </span>
-                  )}
-                  <span className="tabular-nums">
-                    {weatherLoading
-                      ? t("weatherLoading")
-                      : weather
-                        ? `${Math.round(weather.temperature)} °C, ${t("wind")} ${weather.windSpeedKmh.toFixed(0)} km/h`
-                        : hasValidInput && flightDate
-                          ? t("weatherNoData")
-                          : "—"}
-                  </span>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-col gap-4 items-end shrink-0 w-full max-w-[360px]">
