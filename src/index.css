@@ -1,0 +1,404 @@
+@import "tailwindcss";
+
+@import "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+
+:root {
+  --kitzair-radius: 8px;
+  --kitzair-primary: #1e3a5f;
+  --kitzair-primary-hover: #152a47;
+  --kitzair-red: #b91c1c;
+  --kitzair-red-hover: #991b1b;
+  --kitzair-muted: #64748b;
+  --kitzair-border: #e2e8f0;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Source Sans 3", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #334155;
+}
+
+.leaflet-container {
+  font-family: "Source Sans 3", system-ui, sans-serif;
+}
+
+/* react-datepicker: über Karte und Overlays anzeigen */
+.react-datepicker-popper {
+  z-index: 2000 !important;
+}
+
+/* react-datepicker: markierter Tag in Kitzair-Rot */
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: var(--kitzair-red) !important;
+  color: #fff !important;
+}
+.react-datepicker__day--selected:hover,
+.react-datepicker__day--keyboard-selected:hover {
+  background-color: var(--kitzair-red-hover) !important;
+  color: #fff !important;
+}
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
+  background-color: rgba(185, 28, 28, 0.2) !important;
+}
+.react-datepicker__current-month,
+.react-datepicker__header {
+  font-family: "Source Sans 3", system-ui, sans-serif;
+}
+
+.custom-marker {
+  background: none;
+  border: none;
+}
+.marker-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--kitzair-primary);
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+.marker-base {
+  background: #0d9488;
+}
+
+/* Karten-Punkte: Blinken + Popup */
+.map-marker-wrapper {
+  background: none !important;
+  border: none !important;
+}
+.map-marker {
+  transition: opacity 0.2s, transform 0.2s;
+}
+.map-marker:hover {
+  transform: scale(1.1);
+}
+.map-marker.marker-blink {
+  animation: marker-blink 1.8s ease-in-out infinite;
+}
+.map-marker.marker-led.marker-blink {
+  animation: marker-led-blink 1.2s ease-in-out infinite;
+}
+.map-marker-start.marker-led { --led-glow: rgba(34, 197, 94, 0.8); }
+.map-marker-stopover.marker-led { --led-glow: rgba(234, 179, 8, 0.8); }
+.map-marker-destination.marker-led { --led-glow: rgba(220, 38, 38, 0.8); }
+.map-marker-base.marker-led { --led-glow: rgba(185, 28, 28, 0.8); }
+.map-marker-blue.marker-led { --led-glow: rgba(30, 58, 95, 0.6); }
+@keyframes marker-blink {
+  0%, 100% { opacity: 1; box-shadow: 0 2px 8px rgba(30, 58, 95, 0.4); }
+  50% { opacity: 0.85; box-shadow: 0 2px 10px rgba(30, 58, 95, 0.5); }
+}
+@keyframes marker-led-blink {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 12px 2px var(--led-glow, rgba(30,58,95,0.5)); }
+  50% { opacity: 0.9; box-shadow: 0 0 0 2px rgba(255,255,255,0.95), 0 0 20px 6px var(--led-glow, rgba(30,58,95,0.6)); }
+}
+.map-marker.marker-square-blink {
+  animation: marker-square-blink 1.4s ease-in-out infinite;
+}
+@keyframes marker-square-blink {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255,255,255,0.85), 0 2px 8px rgba(0,0,0,0.4); }
+  50% { box-shadow: 0 0 0 2px rgba(255,255,255,0.95), 0 4px 16px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.15); }
+}
+.map-popup .leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  padding: 0;
+}
+.map-popup-base.leaflet-popup-content-wrapper {
+  background: linear-gradient(to bottom, #0f172a 0%, #0f172a 50%, var(--kitzair-red) 50%, var(--kitzair-red) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.map-popup-base .map-popup-content { color: #f1f5f9; }
+.map-popup-base .map-popup-content .text-slate-800 { color: #f1f5f9; }
+.map-popup-base .map-popup-content .text-slate-500 { color: #cbd5e1; }
+.map-popup .leaflet-popup-content {
+  margin: 0;
+  min-width: 180px;
+}
+.map-popup-content {
+  padding: 10px 12px;
+}
+.map-popup-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.map-popup-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--kitzair-primary);
+  background: rgba(30, 58, 95, 0.08);
+  border: 1px solid var(--kitzair-border);
+  border-radius: var(--kitzair-radius);
+  cursor: pointer;
+}
+.map-popup-btn:hover {
+  background: rgba(30, 58, 95, 0.12);
+}
+
+/* Dauerhaft sichtbare Ortsnamen */
+.map-tooltip-permanent.leaflet-tooltip {
+  background: rgba(30, 58, 95, 0.94);
+  color: #f1f5f9;
+  border: none;
+  border-radius: var(--kitzair-radius);
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.map-tooltip-permanent.leaflet-tooltip-left::before {
+  border-left-color: rgba(30, 58, 95, 0.94);
+}
+.map-tooltip-permanent.leaflet-tooltip-right::before {
+  border-right-color: rgba(30, 58, 95, 0.94);
+}
+.map-tooltip-permanent.leaflet-tooltip-top::before {
+  border-top-color: rgba(30, 58, 95, 0.94);
+}
+.map-tooltip-permanent.leaflet-tooltip-bottom::before {
+  border-bottom-color: rgba(30, 58, 95, 0.94);
+}
+
+/* Popup: Koordinaten mit Fadenkreuz */
+.map-popup-elegant .map-popup-content {
+  padding: 12px 14px;
+}
+.map-popup-crosshair {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+/* Flugdauer in der Streckenmitte – kompakt: dunkler Hintergrund, weiße Schrift */
+.map-duration-label-wrapper {
+  background: none !important;
+  border: none !important;
+}
+.map-duration-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.92);
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+.map-duration-label .map-duration-clock,
+.map-duration-label svg {
+  opacity: 0.95;
+  color: inherit;
+}
+.map-drive-duration svg {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+.map-drive-duration-compact .map-duration-label { padding: 2px 5px; font-size: 9px; }
+.map-drive-duration-compact .map-drive-duration svg { width: 10px; height: 10px; }
+.map-drive-duration-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1.15;
+}
+.map-drive-duration-time { font-weight: 700; }
+.map-drive-duration-km { font-size: 8px; opacity: 0.9; }
+
+/* Flugstrecken-Label: Enroute oben, darunter Zeit und km – kompakt */
+.map-duration-label.map-flight-duration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  white-space: normal;
+  text-align: center;
+  padding: 2px 5px;
+}
+.map-flight-duration .map-duration-enroute {
+  display: block;
+  width: 100%;
+  font-size: 7px;
+  line-height: 1.15;
+  color: #94a3b8;
+  margin-bottom: 0;
+  order: -1;
+}
+.map-flight-duration {
+  font-size: 9px;
+}
+.map-flight-duration-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1.2;
+}
+.map-flight-duration-time { font-weight: 700; display: block; font-size: 9px; }
+.map-flight-duration-km { font-size: 7px; opacity: 0.9; display: block; }
+
+/* Routen-Label-Box (START, HALT, ZIEL) – kompakt */
+.route-label-box {
+  position: relative;
+  background: rgba(20, 20, 20, 0.9);
+  color: white;
+  font-family: "Source Sans 3", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 7px;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  max-width: 72px;
+}
+.route-label-box-stuetzpunkt {
+  background: linear-gradient(to bottom, #0f172a 0%, #0f172a 50%, var(--kitzair-red) 50%, var(--kitzair-red) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.route-label-box-stuetzpunkt .route-label-kitzair-logo-wrap {
+  color: #fff;
+  opacity: 1;
+}
+.route-label-text {
+  padding: 1px 5px 0;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-align: center;
+  font-size: 7px;
+}
+.route-label-name-line .route-label-name {
+  font-size: 6px;
+  font-weight: 600;
+  opacity: 0.95;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.route-label-bar {
+  width: 100%;
+  height: 2px;
+}
+.route-label-bar-start { background: #22c55e; }
+.route-label-bar-end { background: #ef4444; }
+.route-label-bar-base { background: #007bff; }
+.route-label-bar-stop { background: #ffd700; }
+.route-label-bar-stuetzpunkt { background: var(--kitzair-red); }
+.route-label-name-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 5px 1px;
+  font-size: 6px;
+  font-weight: 600;
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.route-label-kitzair-logo-wrap {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: #fff;
+}
+.route-label-box-stuetzpunkt .route-label-kitzair-logo-wrap {
+  color: #fff;
+  opacity: 1;
+}
+.route-label-kitzair-logo-wrap .route-label-kitzair-logo {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/* Zoom: Marker und Badges proportional skalieren */
+.map-zoom-aware .map-marker-scaled {
+  transform: scale(var(--map-scale, 1));
+  transform-origin: 50% 50%;
+}
+.map-zoom-aware .map-label-scaled,
+.map-zoom-aware .map-base-label-wrapper {
+  transform: scale(var(--map-scale, 1));
+  transform-origin: 50% 100%;
+}
+
+.leaflet-overlay-pane path {
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
+}
+.leaflet-overlay-pane path.drive-route-polyline {
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.25));
+}
+
+/* Dein Standort: blauer Punkt wie zuvor */
+.user-location-marker-wrapper {
+  background: none !important;
+  border: none !important;
+}
+.user-location-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.user-location-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.6);
+  animation: user-location-blink 1.5s ease-in-out infinite;
+}
+.user-location-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+  text-shadow: 0 0 2px #fff, 0 1px 2px #fff;
+  white-space: nowrap;
+  text-align: center;
+}
+@keyframes user-location-blink {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 2px 10px rgba(37, 99, 235, 0.6); }
+  50% { opacity: 0.85; transform: scale(1.08); box-shadow: 0 2px 14px rgba(37, 99, 235, 0.8); }
+}
+
+/* Basis Kitz-Air: Stützpunkt – edel weiß auf dunklem Grund */
+.base-stuetzpunkt-wrapper {
+  background: none !important;
+  border: none !important;
+}
+.base-stuetzpunkt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.94);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.base-stuetzpunkt-icon {
+  display: inline-flex;
+  color: #fff;
+}
+.base-stuetzpunkt-label {
+  white-space: nowrap;
+}
