@@ -68,3 +68,26 @@ export async function searchAddressSuggestions(
     return [];
   }
 }
+
+/** Reverse Geocoding: Koordinaten → Adress-String (Nominatim). */
+export async function reverseGeocode(
+  lat: number,
+  lon: number
+): Promise<GeocodingResult | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+      { headers: { Accept: "application/json" } }
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as { lat: string; lon: string; display_name: string };
+    if (!data?.display_name) return null;
+    return {
+      lat: parseFloat(data.lat),
+      lon: parseFloat(data.lon),
+      displayName: data.display_name,
+    };
+  } catch {
+    return null;
+  }
+}

@@ -53,6 +53,11 @@ function App() {
   const [flightTimeOfDay, setFlightTimeOfDay] = useState<"morning" | "noon" | "afternoon">("noon");
   const [sunTimes, setSunTimes] = useState<SunTimes | null>(null);
   const [userLocationCoords, setUserLocationCoords] = useState<{ lat: number; lon: number } | null>(null);
+  /** Standort vom Browser (einmalig beim Laden), um Adressfeld vorzufüllen */
+  const [browserLocationForAddress, setBrowserLocationForAddress] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
   const [nearestFromAddress, setNearestFromAddress] = useState<import("./config/locations").Location | null>(null);
   const [driveRoute, setDriveRoute] = useState<{
     coordinates: [number, number][];
@@ -102,6 +107,21 @@ function App() {
   }, [results]);
 
   const hasValidInput = !!mapStart && !!mapDestination;
+
+  /** Beim Laden: Standort abfragen, um Adressfeld automatisch vorzufüllen (Browser zeigt Berechtigungs-Dialog) */
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setBrowserLocationForAddress({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+        });
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 12_000, maximumAge: 300_000 }
+    );
+  }, []);
 
   /** Sunrise/Sunset nur vom Flugdatum abhängig – sofort sichtbar */
   useEffect(() => {
@@ -350,6 +370,7 @@ function App() {
                       setMapStopovers([]);
                       setMapDestination(null);
                     }}
+                    initialPosition={browserLocationForAddress}
                   />
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
@@ -509,63 +530,102 @@ function App() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 min-w-0 rounded-lg overflow-hidden min-h-[220px] sm:min-h-[260px] relative flex flex-col self-stretch">
-                <RouteMap
-                  locations={locations}
-                  legs={legs}
-                  results={results}
-                  mapStart={mapStart}
-                  mapStopovers={mapStopovers}
-                  mapDestination={mapDestination}
-                  isRoundTrip={isRoundTrip}
-                  userLocationCoords={userLocationCoords}
-                  driveRoute={driveRoute}
-                  twoNearestLocations={twoNearestLocations}
-                  twoNearestToBase={twoNearestToBase}
-                  onSelectStart={handleMapSelectStart}
-                  onSelectStopover={handleMapSelectStopover}
-                  onSelectDestination={handleMapSelectDestination}
-                  t={t}
-                  className="flex-1"
-                />
-                {legs && legs.length > 0 && (
-                  <MapWeatherOverlay
-                    rows={routeWeatherRows}
-                    loading={routeWeatherLoading}
-                    dataAvailableUntil={weatherDataAvailableUntil}
-                    flightDateFormatted={
-                      flightDate
-                        ? new Date(flightDate).toLocaleDateString(lang === "de" ? "de-AT" : "en-GB", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                          })
-                        : null
-                    }
+              {/* Karte: auf Mobil höher, Wetter-Overlay nur Desktop (unten); Mobil: Wetter unter der Karte */}
+              <div className="flex-1 min-w-0 flex flex-col gap-0 min-h-[320px] sm:min-h-[360px] lg:min-h-[260px]">
+                <div className="flex-1 min-w-0 rounded-lg overflow-hidden relative flex flex-col self-stretch min-h-[280px] sm:min-h-[320px] lg:min-h-[220px]">
+                  <RouteMap
+                    locations={locations}
+                    legs={legs}
+                    results={results}
+                    mapStart={mapStart}
+                    mapStopovers={mapStopovers}
+                    mapDestination={mapDestination}
+                    isRoundTrip={isRoundTrip}
+                    userLocationCoords={userLocationCoords}
+                    driveRoute={driveRoute}
+                    twoNearestLocations={twoNearestLocations}
+                    twoNearestToBase={twoNearestToBase}
+                    onSelectStart={handleMapSelectStart}
+                    onSelectStopover={handleMapSelectStopover}
+                    onSelectDestination={handleMapSelectDestination}
+                    t={t}
+                    className="flex-1"
                   />
-                )}
-                {/* Wetter-Vorschau + Status rechtsbündig am unteren Kartenrand (über Karte) */}
+                  {legs && legs.length > 0 && (
+                    <MapWeatherOverlay
+                      rows={routeWeatherRows}
+                      loading={routeWeatherLoading}
+                      dataAvailableUntil={weatherDataAvailableUntil}
+                      flightDateFormatted={
+                        flightDate
+                          ? new Date(flightDate).toLocaleDateString(lang === "de" ? "de-AT" : "en-GB", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })
+                          : null
+                      }
+                    />
+                  )}
+                  {/* Wetter-Vorschau nur auf Desktop in der Karte (rechts unten) */}
+                  <div
+                    className="hidden lg:block absolute bottom-0 right-0 z-[1000] w-max max-w-full text-right rounded-tl-lg text-[11px] leading-tight overflow-hidden shadow-lg"
+                    aria-label={t("weather")}
+                  >
+                    {weatherStatus != null && (
+                      <div
+                        className={`flex items-center justify-end gap-1.5 px-2 py-1 ${
+                          weatherStatus === "green"
+                            ? "bg-emerald-600/90 text-white"
+                            : weatherStatus === "yellow"
+                              ? "bg-amber-500/90 text-white"
+                              : "bg-red-600/90 text-white"
+                        }`}
+                      >
+                        <span
+                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                            weatherStatus === "green"
+                              ? "bg-white shadow-[0_0_4px_1px_rgba(255,255,255,0.8)]"
+                              : weatherStatus === "yellow"
+                                ? "bg-white shadow-[0_0_4px_1px_rgba(255,255,255,0.8)]"
+                                : "bg-white shadow-[0_0_4px_1px_rgba(255,255,255,0.8)]"
+                          }`}
+                          aria-hidden
+                        />
+                        <span>
+                          {weatherStatus === "green"
+                            ? t("weatherStatusGood")
+                            : weatherStatus === "yellow"
+                              ? t("weatherStatusObserve")
+                              : t("weatherStatusPoor")}
+                        </span>
+                      </div>
+                    )}
+                    <div className="px-2 py-1.5 bg-slate-900/85 text-slate-100">
+                      {weatherLoading
+                        ? t("weatherLoading")
+                        : weather
+                          ? `${Math.round(weather.temperature)} °C, ${t("wind")} ${weather.windSpeedKmh.toFixed(0)} km/h, ${weather.cloudCover} % ${t("cloudCover")}, ${weather.precipitationMm} mm ${t("precipitation")}`
+                          : hasValidInput && flightDate
+                            ? t("weatherNoData")
+                            : "—"}
+                    </div>
+                  </div>
+                </div>
+                {/* Mobil: Wetter-Streifen unter der Karte (verdeckt die Karte nicht) */}
                 <div
-                  className="absolute bottom-0 right-0 z-[1000] w-max max-w-full text-right rounded-tl-lg text-[11px] leading-tight overflow-hidden shadow-lg"
+                  className="lg:hidden flex flex-wrap items-center justify-end gap-x-3 gap-y-1 px-2 py-1.5 rounded-b-lg bg-slate-900/90 text-slate-100 text-[11px] leading-tight"
                   aria-label={t("weather")}
                 >
                   {weatherStatus != null && (
-                    <div
-                      className={`flex items-center justify-end gap-1.5 px-2 py-1 ${
-                        weatherStatus === "green"
-                          ? "bg-emerald-600/90 text-white"
-                          : weatherStatus === "yellow"
-                            ? "bg-amber-500/90 text-white"
-                            : "bg-red-600/90 text-white"
-                      }`}
-                    >
+                    <span className="flex items-center gap-1.5">
                       <span
-                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                        className={`h-2 w-2 shrink-0 rounded-full ${
                           weatherStatus === "green"
-                            ? "bg-white shadow-[0_0_4px_1px_rgba(255,255,255,0.8)]"
+                            ? "bg-emerald-400"
                             : weatherStatus === "yellow"
-                              ? "bg-white shadow-[0_0_4px_1px_rgba(255,255,255,0.8)]"
-                              : "bg-white shadow-[0_0_4px_1px_rgba(255,255,255,0.8)]"
+                              ? "bg-amber-400"
+                              : "bg-red-400"
                         }`}
                         aria-hidden
                       />
@@ -576,17 +636,17 @@ function App() {
                             ? t("weatherStatusObserve")
                             : t("weatherStatusPoor")}
                       </span>
-                    </div>
+                    </span>
                   )}
-                  <div className="px-2 py-1.5 bg-slate-900/85 text-slate-100">
+                  <span className="tabular-nums">
                     {weatherLoading
                       ? t("weatherLoading")
                       : weather
-                        ? `${Math.round(weather.temperature)} °C, ${t("wind")} ${weather.windSpeedKmh.toFixed(0)} km/h, ${weather.cloudCover} % ${t("cloudCover")}, ${weather.precipitationMm} mm ${t("precipitation")}`
+                        ? `${Math.round(weather.temperature)} °C, ${t("wind")} ${weather.windSpeedKmh.toFixed(0)} km/h`
                         : hasValidInput && flightDate
                           ? t("weatherNoData")
                           : "—"}
-                  </div>
+                  </span>
                 </div>
               </div>
               <div className="flex flex-col gap-4 items-end shrink-0 w-full max-w-[360px]">

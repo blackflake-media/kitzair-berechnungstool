@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { geocodeAddress, searchAddressSuggestions } from "../../services/geocoding";
+import { geocodeAddress, searchAddressSuggestions, reverseGeocode } from "../../services/geocoding";
 import type { GeocodingResult } from "../../services/geocoding";
 import { getNearestLocation } from "../../services/calculation";
 import type { Location } from "../../config/locations";
@@ -18,6 +18,8 @@ interface AddressSearchProps {
   ) => void;
   onClear?: () => void;
   placeholder?: string;
+  /** Wenn gesetzt: Standort per Reverse-Geocoding ins Feld übernehmen und Auswahl auslösen (einmalig). */
+  initialPosition?: { lat: number; lon: number } | null;
 }
 
 const SUGGEST_DEBOUNCE_MS = 350;
@@ -26,6 +28,7 @@ export function AddressSearch({
   onAddressSelected,
   onClear,
   placeholder,
+  initialPosition,
 }: AddressSearchProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -38,6 +41,7 @@ export function AddressSearch({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const prevQueryRef = useRef(query);
+  const initialPositionAppliedRef = useRef(false);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -70,6 +74,35 @@ export function AddressSearch({
     }
     prevQueryRef.current = query;
   }, [query, onClear]);
+
+  // Einmalig: Standort (z. B. vom Browser) → Reverse-Geocoding → Feld füllen und Auswahl übernehmen
+  useEffect(() => {
+    if (!initialPosition || initialPositionAppliedRef.current) return;
+    initialPositionAppliedRef.current = true;
+    setLoading(true);
+    setError(null);
+    reverseGeocode(initialPosition.lat, initialPosition.lon)
+      .then((geo) => {
+        if (!geo) {
+          setError(t("addressNotFound"));
+          return;
+        }
+        setQuery(geo.displayName);
+        const nearest = getNearestLocation(geo.lat, geo.lon);
+        if (!nearest) {
+          setError(t("noLocationFound"));
+          return;
+        }
+        setResult({ name: nearest.location.name, distanceKm: nearest.distanceKm });
+        onAddressSelected(
+          { lat: geo.lat, lon: geo.lon },
+          nearest.location,
+          nearest.distanceKm
+        );
+      })
+      .catch(() => setError(t("searchFailed")))
+      .finally(() => setLoading(false));
+  }, [initialPosition, onAddressSelected, t]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
