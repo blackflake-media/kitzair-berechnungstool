@@ -609,6 +609,9 @@ function App() {
       </div>
       <p className="text-center text-[11px] text-slate-400 py-1.5" aria-label="Powered by KitzAir OS">
         Powered by KitzAir OS
+        {getBaseLocation().icao && (
+          <span className="ml-1 opacity-80">· Basis {getBaseLocation().icao}</span>
+        )}
       </p>
     </div>
   );
