@@ -530,9 +530,9 @@ function App() {
                   </div>
                 </div>
               </div>
-              {/* Karte: auf Mobil höher, Wetter-Overlay nur Desktop (unten); Mobil: Wetter unter der Karte */}
-              <div className="flex-1 min-w-0 flex flex-col gap-0 min-h-[320px] sm:min-h-[360px] lg:min-h-[260px]">
-                <div className="flex-1 min-w-0 rounded-lg overflow-hidden relative flex flex-col self-stretch min-h-[280px] sm:min-h-[320px] lg:min-h-[220px]">
+              {/* Karte: Handy/Tablet höher; Wettervorhersage-Box (LEDs) nur ab Tablet, auf Handy ausgeblendet */}
+              <div className="flex-1 min-w-0 flex flex-col gap-0 min-h-[380px] sm:min-h-[420px] md:min-h-[400px] lg:min-h-[260px]">
+                <div className="flex-1 min-w-0 rounded-lg overflow-hidden relative flex flex-col self-stretch min-h-[340px] sm:min-h-[380px] md:min-h-[360px] lg:min-h-[220px]">
                   <RouteMap
                     locations={locations}
                     legs={legs}
@@ -551,21 +551,24 @@ function App() {
                     t={t}
                     className="flex-1"
                   />
+                  {/* Wettervorhersage-Box (mit LEDs): nur ab Tablet sichtbar, auf Handy ausgeblendet (verdeckt sonst die ganze Karte) */}
                   {legs && legs.length > 0 && (
-                    <MapWeatherOverlay
-                      rows={routeWeatherRows}
-                      loading={routeWeatherLoading}
-                      dataAvailableUntil={weatherDataAvailableUntil}
-                      flightDateFormatted={
-                        flightDate
-                          ? new Date(flightDate).toLocaleDateString(lang === "de" ? "de-AT" : "en-GB", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            })
-                          : null
-                      }
-                    />
+                    <div className="hidden md:block absolute top-2 right-2 z-[1000]">
+                      <MapWeatherOverlay
+                        rows={routeWeatherRows}
+                        loading={routeWeatherLoading}
+                        dataAvailableUntil={weatherDataAvailableUntil}
+                        flightDateFormatted={
+                          flightDate
+                            ? new Date(flightDate).toLocaleDateString(lang === "de" ? "de-AT" : "en-GB", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              })
+                            : null
+                        }
+                      />
+                    </div>
                   )}
                   {/* Wetter-Vorschau nur auf Desktop in der Karte (rechts unten) */}
                   <div
