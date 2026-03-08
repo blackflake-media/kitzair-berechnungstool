@@ -10,6 +10,8 @@ export interface Location {
   address?: string;
   description?: string;
   visibleOnMap?: boolean;
+  /** ICAO-Code (z. B. Heliport LOJE) */
+  icao?: string;
   /** Zusatzkosten (z. B. Flughafengebühren) – nur für Preisberechnung */
   extraCosts?: number;
 }
@@ -17,11 +19,12 @@ export interface Location {
 export const locations: Location[] = [
   {
     id: "base",
-    name: "Basis Kitz-Air / Heliport Erpfendorf",
-    lat: 47.4467,
-    lon: 12.3916,
-    address: "Erpfendorf, Kitzbühel",
-    description: "Hauptbasis",
+    name: "Basis Kitz-Air / Heliport Erpfendorf (LOJE)",
+    lat: 47.576134,
+    lon: 12.473443,
+    address: "KITZ-AIR GmbH, Brandwiesweg 3, A-6383 Erpfendorf",
+    description: "Hauptbasis, Heliport LOJE",
+    icao: "LOJE",
     visibleOnMap: true,
     extraCosts: 250,
   },

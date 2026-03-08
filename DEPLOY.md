@@ -1,56 +1,78 @@
 # Kitzair Berechnungstool – Online stellen
 
-Der Build liegt unter `dist/`. Du kannst auf folgende Arten veröffentlichen:
+**Erledigt:** Git-Repo ist initialisiert, erster Commit ist auf Branch `main`. Du bist bei Vercel und GitHub im Browser angemeldet.
 
 ---
 
-## Option 1: Vercel (empfohlen, bereits vorbereitet)
+## So geht es jetzt am schnellsten (GitHub + Vercel)
 
-Die Projektdatei `vercel.json` ist schon da. So geht’s:
+### 1. Neues Repo auf GitHub anlegen
 
-### A) Mit Vercel CLI (ohne Git)
+1. Geh zu [github.com/new](https://github.com/new).
+2. Repository name: z.B. **kitzair-berechnungstool**.
+3. **Public**, ohne README/ .gitignore (haben wir schon).
+4. **Create repository**.
 
-1. Einmal einloggen:
+### 2. Projekt mit GitHub verbinden und pushen
+
+Im Projektordner in der **Terminal/CMD/PowerShell** (im Ordner `kitzair-berechnungstool`):
+
+```bash
+git remote add origin https://github.com/DEIN-GITHUB-USERNAME/kitzair-berechnungstool.git
+git push -u origin main
+```
+
+(DEN-GITHUB-USERNAME durch deinen echten GitHub-Benutzernamen ersetzen.)
+
+### 3. Bei Vercel deployen
+
+1. Geh zu [vercel.com/new](https://vercel.com/new).
+2. **Import Git Repository** → dein Repo **kitzair-berechnungstool** auswählen.
+3. **Deploy** klicken (Build-Kommando und Ausgabe-Ordner erkennt Vercel automatisch).
+4. Fertig – deine URL z.B. `https://kitzair-berechnungstool-xxx.vercel.app`.
+
+Ab dann: Bei jedem **Push auf main** baut Vercel automatisch neu.
+
+---
+
+## Veröffentlichte Version aktualisieren
+
+Wenn du etwas änderst (z. B. Basis-Adresse, Texte, Config) und die live Seite updaten willst:
+
+**Mit GitHub + Vercel (empfohlen):**
+
+1. Änderungen committen und nach GitHub pushen:
+   ```bash
+   git add .
+   git commit -m "Basis-Adresse / LOJE aktualisiert"
+   git push origin main
+   ```
+2. Vercel baut automatisch neu; nach 1–2 Minuten ist die neue Version online.
+
+**Nur mit Vercel CLI:**
+
+```bash
+git add .
+git commit -m "Basis-Adresse / LOJE aktualisiert"
+npx vercel --prod
+```
+
+---
+
+## Alternative: Nur Vercel CLI (ohne GitHub)
+
+1. Einmal im Terminal einloggen (Browser öffnet sich):
    ```bash
    npx vercel login
    ```
-   (E-Mail öffnen und Link klicken.)
-
-2. Im Projektordner deployen:
+2. Deploy:
    ```bash
    npx vercel --prod
    ```
-   Beim ersten Mal: Projektname bestätigen, danach bekommst du eine URL wie  
-   `https://kitzair-berechnungstool-xxx.vercel.app`.
-
-### B) Mit GitHub + Vercel (für automatische Deployments)
-
-1. Git-Repo anlegen (falls noch nicht geschehen):
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   ```
-
-2. Repo auf GitHub pushen (eigenes Repo unter github.com anlegen, dann):
-   ```bash
-   git remote add origin https://github.com/DEIN-USER/kitzair-berechnungstool.git
-   git branch -M main
-   git push -u origin main
-   ```
-
-3. Auf [vercel.com](https://vercel.com) einloggen → **Add New Project** → **Import** das GitHub-Repo.  
-   Vercel erkennt Vite und die `vercel.json` automatisch. Mit **Deploy** ist die App online.
 
 ---
 
-## Option 2: Anderer Hoster (nur `dist` hochladen)
+## Option: Nur `dist` hochladen
 
-1. Build erzeugen:
-   ```bash
-   npm run build
-   ```
-
-2. Den kompletten Inhalt des Ordners **`dist/`** auf deinen Webspace hochladen (z.B. per FTP, Netlify Drag & Drop, Cloudflare Pages, etc.).
-
-Wichtig: Beim Hoster **SPA-Routing** aktivieren (alle Routen auf `index.html` umleiten), sonst funktionieren direkte URLs/Reload nicht. Bei Vercel ist das bereits über `vercel.json` eingestellt.
+Build: `npm run build`  
+Den Inhalt von **`dist/`** bei einem beliebigen Hoster hochladen; SPA-Routing auf `index.html` leiten.
