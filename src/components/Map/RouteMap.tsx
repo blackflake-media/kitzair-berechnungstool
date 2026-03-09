@@ -62,7 +62,7 @@ function drawFlightArc(
   return pts;
 }
 import { helicopters } from "../../config/helicopters";
-import type { TranslationKey } from "../../i18n";
+import type { Lang, TranslationKey } from "../../i18n";
 
 const DEFAULT_ZOOM = 8;
 const speedKts = helicopters[0]?.speedKts ?? 120;
@@ -165,6 +165,7 @@ interface RouteMapProps {
   legs: Leg[] | null;
   /** Beide Helis – für Min/Max-Flugzeit auf der Karte */
   results?: { helicopter: Helicopter; result: MissionResult }[];
+  lang: Lang;
   mapStart: string | null;
   mapStopovers: string[];
   mapDestination: string | null;
@@ -187,6 +188,7 @@ export function RouteMap({
   locations,
   legs,
   results = [],
+  lang,
   mapStart,
   mapStopovers,
   mapDestination,
@@ -203,6 +205,7 @@ export function RouteMap({
 }: RouteMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const markersRef = useRef<L.Marker[]>([]);
   const routeLayerRef = useRef<L.LayerGroup | null>(null);
@@ -224,12 +227,29 @@ export function RouteMap({
 
     const base = getBaseLocation();
     const map = L.map(mapRef.current).setView([base.lat, base.lon], DEFAULT_ZOOM);
-    // Kräftige, edle Basiskarte (CartoDB Voyager): klare Kontraste, Straßen, Ortsnamen
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-      subdomains: "abcd",
-      maxZoom: 20,
-    }).addTo(map);
+
+    const makeTileLayer = (l: Lang) => {
+      // Ziel: Kartenbeschriftung je Sprache (de: OSM-DE Tiles), sonst CARTO Voyager.
+      if (l === "de") {
+        return L.tileLayer("https://tile.openstreetmap.de/{z}/{x}/{y}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap-Mitwirkende</a>',
+          maxZoom: 20,
+        });
+      }
+      // Kräftige, edle Basiskarte (CartoDB Voyager): klare Kontraste, Straßen, Ortsnamen
+      return L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+          subdomains: "abcd",
+          maxZoom: 20,
+        }
+      );
+    };
+
+    tileLayerRef.current = makeTileLayer(lang).addTo(map);
     mapInstanceRef.current = map;
     map.whenReady(() => setMapReady(true));
 
@@ -277,11 +297,40 @@ export function RouteMap({
       userLocationMarkerRef.current = null;
       map.remove();
       mapInstanceRef.current = null;
+      tileLayerRef.current = null;
       markersRef.current = [];
       durationLabelsRef.current = [];
       setMapReady(false);
     };
   }, []);
+
+  // Bei Sprachwechsel: Tile-Layer austauschen (Labels/Attribution).
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    const makeTileLayer = (l: Lang) => {
+      if (l === "de") {
+        return L.tileLayer("https://tile.openstreetmap.de/{z}/{x}/{y}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap-Mitwirkende</a>',
+          maxZoom: 20,
+        });
+      }
+      return L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+          subdomains: "abcd",
+          maxZoom: 20,
+        }
+      );
+    };
+
+    tileLayerRef.current?.remove();
+    tileLayerRef.current = makeTileLayer(lang).addTo(map);
+  }, [lang]);
 
   // Markers
   useEffect(() => {

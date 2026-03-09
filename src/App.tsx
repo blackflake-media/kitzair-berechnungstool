@@ -10,7 +10,10 @@ import {
   type Leg,
 } from "./services/calculation";
 import { getLocationById, getBaseLocation } from "./config/locations";
-import { fetchDrivingRoute, fetchDrivingRouteForWaypoints } from "./services/routing";
+import {
+  fetchDrivingRoute,
+  fetchDrivingRouteForWaypoints,
+} from "./services/routing";
 import { fetchWeather } from "./services/weather";
 import { getSunTimes, formatTime } from "./services/sunriseSunset";
 import type { WeatherData } from "./services/weather";
@@ -50,15 +53,22 @@ function App() {
   >([]);
   const [routeWeatherLoading, setRouteWeatherLoading] = useState(false);
   /** Vormittag / Mittag / Nachmittag – für besseren Fliegbarkeits-Forecast */
-  const [flightTimeOfDay, setFlightTimeOfDay] = useState<"morning" | "noon" | "afternoon">("noon");
+  const [flightTimeOfDay, setFlightTimeOfDay] = useState<
+    "morning" | "noon" | "afternoon"
+  >("noon");
   const [sunTimes, setSunTimes] = useState<SunTimes | null>(null);
-  const [userLocationCoords, setUserLocationCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [userLocationCoords, setUserLocationCoords] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
   /** Standort vom Browser (einmalig beim Laden), um Adressfeld vorzufüllen */
   const [browserLocationForAddress, setBrowserLocationForAddress] = useState<{
     lat: number;
     lon: number;
   } | null>(null);
-  const [nearestFromAddress, setNearestFromAddress] = useState<import("./config/locations").Location | null>(null);
+  const [nearestFromAddress, setNearestFromAddress] = useState<
+    import("./config/locations").Location | null
+  >(null);
   const [driveRoute, setDriveRoute] = useState<{
     coordinates: [number, number][];
     durationMinutes: number;
@@ -73,7 +83,8 @@ function App() {
     distanceKm: number;
   } | null>(null);
   const twoNearestToBase = useMemo(() => {
-    if (userLocationCoords || (driveRoute?.coordinates?.length ?? 0) > 0) return [];
+    if (userLocationCoords || (driveRoute?.coordinates?.length ?? 0) > 0)
+      return [];
     const base = getBaseLocation();
     return getNearestLocations(base.lat, base.lon, 2, true);
   }, [userLocationCoords, driveRoute]);
@@ -81,21 +92,27 @@ function App() {
   // Route ab mind. 2 Orten (Start+Ziel oder Start+Stopover) – Zeichnung auch ohne Ziel
   const locationIds = useMemo(() => {
     if (!mapStart) return [];
-    return [mapStart, ...mapStopovers, mapDestination].filter(Boolean) as string[];
+    return [mapStart, ...mapStopovers, mapDestination].filter(
+      Boolean,
+    ) as string[];
   }, [mapStart, mapStopovers, mapDestination]);
 
   const missionType: MissionType =
-    locationIds.length > 2
-      ? "multileg"
-      : isRoundTrip
-        ? "round-trip"
-        : "a-to-b";
+    locationIds.length > 2 ? "multileg" : isRoundTrip ? "round-trip" : "a-to-b";
 
   const results = useMemo(() => {
     if (locationIds.length < 2) return [];
-    const arr: { helicopter: (typeof helicopters)[0]; result: MissionResult }[] = [];
+    const arr: {
+      helicopter: (typeof helicopters)[0];
+      result: MissionResult;
+    }[] = [];
     for (const heli of helicopters) {
-      const result = calculateMission(heli, missionType, locationIds, returnStopHours);
+      const result = calculateMission(
+        heli,
+        missionType,
+        locationIds,
+        returnStopHours,
+      );
       if (result) arr.push({ helicopter: heli, result });
     }
     return arr;
@@ -119,7 +136,7 @@ function App() {
         });
       },
       () => {},
-      { enableHighAccuracy: false, timeout: 12_000, maximumAge: 300_000 }
+      { enableHighAccuracy: false, timeout: 12_000, maximumAge: 300_000 },
     );
   }, []);
 
@@ -147,7 +164,8 @@ function App() {
     const midLon =
       legs.reduce((s, leg) => s + leg.from.lon + leg.to.lon, 0) /
       (legs.length * 2);
-    const hour = flightTimeOfDay === "morning" ? 9 : flightTimeOfDay === "noon" ? 12 : 15;
+    const hour =
+      flightTimeOfDay === "morning" ? 9 : flightTimeOfDay === "noon" ? 12 : 15;
     setWeatherLoading(true);
     fetchWeather(midLat, midLon, date, hour)
       .then(setWeather)
@@ -160,14 +178,27 @@ function App() {
       return;
     }
     const singleEnroute = displayLegs.length === 1;
-    const points: { label: string; lat: number; lon: number; hourOffset?: number }[] = [
-      { label: t("departure"), lat: displayLegs[0].from.lat, lon: displayLegs[0].from.lon },
+    const points: {
+      label: string;
+      lat: number;
+      lon: number;
+      hourOffset?: number;
+    }[] = [
+      {
+        label: t("departure"),
+        lat: displayLegs[0].from.lat,
+        lon: displayLegs[0].from.lon,
+      },
       ...displayLegs.map((leg, i) => ({
         label: singleEnroute ? t("enroute") : `${t("enroute")} ${i + 1}`,
         lat: (leg.from.lat + leg.to.lat) / 2,
         lon: (leg.from.lon + leg.to.lon) / 2,
       })),
-      { label: t("destination"), lat: displayLegs[displayLegs.length - 1].to.lat, lon: displayLegs[displayLegs.length - 1].to.lon },
+      {
+        label: t("destination"),
+        lat: displayLegs[displayLegs.length - 1].to.lat,
+        lon: displayLegs[displayLegs.length - 1].to.lon,
+      },
     ];
     if (isRoundTrip) {
       points.push({
@@ -182,10 +213,12 @@ function App() {
       points.map((p) => {
         const h = (hour + (p.hourOffset ?? 0)) % 24;
         return fetchWeather(p.lat, p.lon, date, h);
-      })
+      }),
     )
       .then((data) =>
-        setRouteWeatherRows(points.map((p, i) => ({ label: p.label, data: data[i] ?? null })))
+        setRouteWeatherRows(
+          points.map((p, i) => ({ label: p.label, data: data[i] ?? null })),
+        ),
       )
       .finally(() => setRouteWeatherLoading(false));
   }, [flightDate, legs, flightTimeOfDay, isRoundTrip, returnStopHours, t]);
@@ -209,7 +242,11 @@ function App() {
       waypoints.push(outboundLegs[0].from);
     }
     fetchDrivingRouteForWaypoints(waypoints).then((r) =>
-      setRouteDriving(r ? { durationMinutes: r.durationMinutes, distanceKm: r.distanceKm } : null)
+      setRouteDriving(
+        r
+          ? { durationMinutes: r.durationMinutes, distanceKm: r.distanceKm }
+          : null,
+      ),
     );
   }, [legs, isRoundTrip]);
 
@@ -217,7 +254,11 @@ function App() {
   const weatherDataAvailableUntil = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 16);
-    return d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" });
+    return d.toLocaleDateString(locale, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   }, [locale]);
 
   const dateLabel = flightDate
@@ -232,7 +273,10 @@ function App() {
   /** Schlechtester VFR-Status über alle Wegpunkte (für Wetter-Status-Kachel) */
   const weatherStatus = useMemo((): VfrLight | null => {
     if (routeWeatherLoading || routeWeatherRows.length === 0) return null;
-    const withData = routeWeatherRows.filter((r) => r.data != null) as { label: string; data: import("./services/weather").WeatherData }[];
+    const withData = routeWeatherRows.filter((r) => r.data != null) as {
+      label: string;
+      data: import("./services/weather").WeatherData;
+    }[];
     if (withData.length === 0) return null;
     let worst: VfrLight = "green";
     for (const row of withData) {
@@ -241,7 +285,11 @@ function App() {
       const c = vfrCloudCover(d.cloudCover);
       const p = vfrPrecipitation(d.precipitationMm);
       if (w === "red" || c === "red" || p === "red") worst = "red";
-      else if (worst !== "red" && (w === "yellow" || c === "yellow" || p === "yellow")) worst = "yellow";
+      else if (
+        worst !== "red" &&
+        (w === "yellow" || c === "yellow" || p === "yellow")
+      )
+        worst = "yellow";
     }
     return worst;
   }, [routeWeatherRows, routeWeatherLoading]);
@@ -280,7 +328,7 @@ function App() {
       userLocationCoords.lat,
       userLocationCoords.lon,
       2,
-      true
+      true,
     );
     setTwoNearestLocations(two);
     const startId = mapStart ?? nearestFromAddress?.id ?? null;
@@ -293,8 +341,21 @@ function App() {
       setDriveRoute(null);
       return;
     }
-    fetchDrivingRoute(userLocationCoords, { lat: startLoc.lat, lon: startLoc.lon })
-      .then((route) => setDriveRoute(route ? { coordinates: route.coordinates, durationMinutes: route.durationMinutes, distanceKm: route.distanceKm } : null))
+    fetchDrivingRoute(userLocationCoords, {
+      lat: startLoc.lat,
+      lon: startLoc.lon,
+    })
+      .then((route) =>
+        setDriveRoute(
+          route
+            ? {
+                coordinates: route.coordinates,
+                durationMinutes: route.durationMinutes,
+                distanceKm: route.distanceKm,
+              }
+            : null,
+        ),
+      )
       .catch(() => setDriveRoute(null));
   }, [userLocationCoords, mapStart, nearestFromAddress?.id]);
 
@@ -307,7 +368,9 @@ function App() {
             <h1 className="text-sm font-semibold tracking-tight text-slate-800 sm:text-base">
               {t("title")}
               {!isEmbed && (
-                <span className="font-normal text-slate-500 ml-1.5 hidden sm:inline">– {t("subtitle")}</span>
+                <span className="font-normal text-slate-500 ml-1.5 hidden sm:inline">
+                  – {t("subtitle")}
+                </span>
               )}
             </h1>
             {!isEmbed && (
@@ -317,7 +380,11 @@ function App() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex rounded-md border border-slate-200 bg-slate-50/80 p-0.5" role="group" aria-label={t("language")}>
+            <div
+              className="flex rounded-md border border-slate-200 bg-slate-50/80 p-0.5"
+              role="group"
+              aria-label={t("language")}
+            >
               <button
                 type="button"
                 onClick={() => setLang("de")}
@@ -357,21 +424,25 @@ function App() {
                   {t("address")}
                 </label>
                 <AddressSearch
-                    onAddressSelected={(searchCoords, nearestLocation, _distanceKm) => {
-                      setUserLocationCoords(searchCoords);
-                      setNearestFromAddress(nearestLocation);
-                    }}
-                    onClear={() => {
-                      setUserLocationCoords(null);
-                      setNearestFromAddress(null);
-                      setDriveRoute(null);
-                      setTwoNearestLocations([]);
-                      setMapStart(null);
-                      setMapStopovers([]);
-                      setMapDestination(null);
-                    }}
-                    initialPosition={browserLocationForAddress}
-                  />
+                  onAddressSelected={(
+                    searchCoords,
+                    nearestLocation,
+                    _distanceKm,
+                  ) => {
+                    setUserLocationCoords(searchCoords);
+                    setNearestFromAddress(nearestLocation);
+                  }}
+                  onClear={() => {
+                    setUserLocationCoords(null);
+                    setNearestFromAddress(null);
+                    setDriveRoute(null);
+                    setTwoNearestLocations([]);
+                    setMapStart(null);
+                    setMapStopovers([]);
+                    setMapDestination(null);
+                  }}
+                  initialPosition={browserLocationForAddress}
+                />
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
                 <div className="kitzair-datepicker-wrapper">
@@ -383,12 +454,18 @@ function App() {
                   </label>
                   <DatePicker
                     id="flight-date"
-                    selected={flightDate ? new Date(flightDate + "T12:00:00") : null}
-                    onChange={(d: Date | null) => setFlightDate(d ? d.toISOString().slice(0, 10) : "")}
+                    selected={
+                      flightDate ? new Date(flightDate + "T12:00:00") : null
+                    }
+                    onChange={(d: Date | null) =>
+                      setFlightDate(d ? d.toISOString().slice(0, 10) : "")
+                    }
                     minDate={new Date()}
                     locale={lang === "de" ? "de" : "en"}
                     dateFormat={lang === "de" ? "dd.MM.yyyy" : "dd/MM/yyyy"}
-                    placeholderText={lang === "de" ? "TT.MM.JJJJ" : "DD/MM/YYYY"}
+                    placeholderText={
+                      lang === "de" ? "TT.MM.JJJJ" : "DD/MM/YYYY"
+                    }
                     className="w-full rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:border-[var(--kitzair-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--kitzair-primary)]/25 sm:w-[9.5rem]"
                   />
                 </div>
@@ -477,7 +554,9 @@ function App() {
                     <select
                       id="return-stop-hours"
                       value={returnStopHours}
-                      onChange={(e) => setReturnStopHours(Number(e.target.value))}
+                      onChange={(e) =>
+                        setReturnStopHours(Number(e.target.value))
+                      }
                       className="w-full rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:border-[var(--kitzair-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--kitzair-primary)]/25 sm:w-[4rem]"
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((h) => (
@@ -498,35 +577,51 @@ function App() {
               {/* Linke Spalte: Reiseroute + Kacheln (Sunrise/Sunset, Indikativ, Wetter-Status) */}
               <div className="flex flex-col gap-2 shrink-0 w-full max-w-sm lg:w-auto">
                 <FlightPlanCard
-                legs={legs}
-                sunTimes={sunTimes}
-                isRoundTrip={isRoundTrip}
-                returnStopHours={returnStopHours}
-                results={results}
-                mapStart={mapStart}
-                startLocationName={mapStart ? getLocationById(mapStart)?.name ?? null : null}
-                stopoverNames={mapStopovers.map((id) => getLocationById(id)?.name).filter(Boolean) as string[]}
-                hasDestination={!!mapDestination}
-                driveDurationMinutes={driveRoute?.durationMinutes ?? null}
-                driveDistanceKm={driveRoute?.distanceKm ?? null}
-                onReset={handleMapReset}
-              />
+                  legs={legs}
+                  sunTimes={sunTimes}
+                  isRoundTrip={isRoundTrip}
+                  returnStopHours={returnStopHours}
+                  results={results}
+                  mapStart={mapStart}
+                  startLocationName={
+                    mapStart ? (getLocationById(mapStart)?.name ?? null) : null
+                  }
+                  stopoverNames={
+                    mapStopovers
+                      .map((id) => getLocationById(id)?.name)
+                      .filter(Boolean) as string[]
+                  }
+                  hasDestination={!!mapDestination}
+                  driveDurationMinutes={driveRoute?.durationMinutes ?? null}
+                  driveDistanceKm={driveRoute?.distanceKm ?? null}
+                  onReset={handleMapReset}
+                />
                 {/* Kacheln unter der Reiseroute – volle Spaltenbreite */}
                 <div className="flex flex-col gap-1.5 w-full" role="status">
                   <div className="w-full rounded border border-slate-200 bg-slate-50/80 px-2 py-1.5">
                     <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">
                       {t("sunriseSunset")}
                     </div>
-                    {(dateLabel || sunTimes) ? (
+                    {dateLabel || sunTimes ? (
                       <p className="text-[11px] text-slate-700">
-                        {[dateLabel, sunTimes && `${t("sunrise")} ${formatTime(sunTimes.sunrise, lang)}, ${t("sunset")} ${formatTime(sunTimes.sunset, lang)}`].filter(Boolean).join(" · ")}
+                        {[
+                          dateLabel,
+                          sunTimes &&
+                            `${t("sunrise")} ${formatTime(sunTimes.sunrise, lang)}, ${t("sunset")} ${formatTime(sunTimes.sunset, lang)}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </p>
                     ) : (
-                      <p className="text-[11px] text-slate-500">{t("sunriseSunsetNoData")}</p>
+                      <p className="text-[11px] text-slate-500">
+                        {t("sunriseSunsetNoData")}
+                      </p>
                     )}
                   </div>
                   <div className="w-full rounded border border-slate-200 bg-slate-50/80 px-2 py-1.5">
-                    <p className="text-[11px] font-bold text-[var(--kitzair-red)] leading-tight">{t("indicativeDisclaimer")}</p>
+                    <p className="text-[11px] font-bold text-[var(--kitzair-red)] leading-tight">
+                      {t("indicativeDisclaimer")}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -537,6 +632,7 @@ function App() {
                     locations={locations}
                     legs={legs}
                     results={results}
+                      lang={lang}
                     mapStart={mapStart}
                     mapStopovers={mapStopovers}
                     mapDestination={mapDestination}
@@ -560,11 +656,14 @@ function App() {
                         dataAvailableUntil={weatherDataAvailableUntil}
                         flightDateFormatted={
                           flightDate
-                            ? new Date(flightDate).toLocaleDateString(lang === "de" ? "de-AT" : "en-GB", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              })
+                            ? new Date(flightDate).toLocaleDateString(
+                                lang === "de" ? "de-AT" : "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                },
+                              )
                             : null
                         }
                       />
@@ -613,7 +712,10 @@ function App() {
                   <RouteCard
                     key={helicopter.id}
                     helicopter={helicopter}
-                    result={results.find((r) => r.helicopter.id === helicopter.id)?.result ?? null}
+                    result={
+                      results.find((r) => r.helicopter.id === helicopter.id)
+                        ?.result ?? null
+                    }
                     legs={legs}
                     isRoundTrip={isRoundTrip}
                     routeDriving={routeDriving}
@@ -623,13 +725,17 @@ function App() {
               </div>
             </div>
           </section>
-
         </div>
       </div>
-      <p className="text-center text-[11px] text-slate-400 py-1.5" aria-label="Powered by KitzAir OS">
+      <p
+        className="text-center text-[11px] text-slate-400 py-1.5"
+        aria-label="Powered by KitzAir OS"
+      >
         Powered by KitzAir OS
         {getBaseLocation().icao && (
-          <span className="ml-1 opacity-80">· Basis {getBaseLocation().icao}</span>
+          <span className="ml-1 opacity-80">
+            · Basis {getBaseLocation().icao}
+          </span>
         )}
       </p>
     </div>
