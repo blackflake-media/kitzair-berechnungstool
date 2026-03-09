@@ -29,7 +29,7 @@ const KMH_220_KTS = 220 / 1.852;
 export const helicopters: Helicopter[] = [
   {
     id: "h1",
-    name: "Airbus H125 B3 (AS350)",
+    name: "Airbus H125 B3",
     baseLocationId: "base",
     speedKts: Math.round(KMH_220_KTS),
     priceFromPerFlightHourNet: 2040,
@@ -40,7 +40,7 @@ export const helicopters: Helicopter[] = [
   },
   {
     id: "h2",
-    name: "Bell 505 (B505)",
+    name: "Bell 505",
     baseLocationId: "base",
     speedKts: 110,
     priceFromPerFlightHourNet: 1695,
