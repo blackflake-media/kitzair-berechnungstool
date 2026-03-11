@@ -14,7 +14,7 @@ const CLOUD_YELLOW = 90;
 
 /** Niederschlag mm (stündlich): grün 0, gelb leicht, rot bedeutend */
 const PRECIP_GREEN = 0;
-const PRECIP_YELLOW = 1;
+const PRECIP_YELLOW = 3;
 
 export function vfrWind(windKmh: number): VfrLight {
   if (windKmh <= WIND_KMH_GREEN) return "green";
