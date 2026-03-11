@@ -10,7 +10,7 @@ const WIND_KMH_YELLOW = 50;
 
 /** Bewölkung in %: grün wenig, gelb mittel, rot hoch */
 const CLOUD_GREEN = 50;
-const CLOUD_YELLOW = 80;
+const CLOUD_YELLOW = 90;
 
 /** Niederschlag mm (stündlich): grün 0, gelb leicht, rot bedeutend */
 const PRECIP_GREEN = 0;
